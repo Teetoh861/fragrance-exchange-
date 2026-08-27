@@ -6,14 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { uploadPhoto } from "@/lib/client-upload";
 import {
+  BRAND_SUGGESTIONS,
   CATEGORY_LABELS,
   CONCENTRATION_LABELS,
   CONDITION_LABELS,
-  FILL_LEVEL_BANDS,
+  FILL_LEVEL_SUGGESTIONS,
   GENDER_LABELS,
   PURCHASE_SOURCE_LABELS,
   REQUIRED_PHOTO_TYPES,
   PHOTO_TYPE_LABELS,
+  SIZE_ML_SUGGESTIONS,
 } from "@/lib/constants";
 
 const ALL_PHOTO_TYPES = [...REQUIRED_PHOTO_TYPES, "BOX"] as const;
@@ -103,7 +105,12 @@ export default function NewListingPage() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="brand">Brand</Label>
-            <Input id="brand" name="brand" required maxLength={80} />
+            <Input id="brand" name="brand" list="brand-suggestions" required maxLength={80} />
+            <datalist id="brand-suggestions">
+              {BRAND_SUGGESTIONS.map((brand) => (
+                <option key={brand} value={brand} />
+              ))}
+            </datalist>
           </div>
           <div>
             <Label htmlFor="fragranceName">Fragrance name</Label>
@@ -153,20 +160,37 @@ export default function NewListingPage() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div>
             <Label htmlFor="sizeMl">Bottle size (ml)</Label>
-            <Input id="sizeMl" name="sizeMl" type="number" min={1} max={2000} required />
+            <Input
+              id="sizeMl"
+              name="sizeMl"
+              type="number"
+              list="size-ml-suggestions"
+              min={1}
+              max={2000}
+              required
+            />
+            <datalist id="size-ml-suggestions">
+              {SIZE_ML_SUGGESTIONS.map((size) => (
+                <option key={size} value={size} />
+              ))}
+            </datalist>
           </div>
           <div>
             <Label htmlFor="fillLevel">Fill level (%)</Label>
-            <Select id="fillLevel" name="fillLevel" required defaultValue="">
-              <option value="" disabled>
-                Select
-              </option>
-              {FILL_LEVEL_BANDS.map((band) => (
-                <option key={band} value={band}>
-                  {band}%+
-                </option>
+            <Input
+              id="fillLevel"
+              name="fillLevel"
+              type="number"
+              list="fill-level-suggestions"
+              min={1}
+              max={100}
+              required
+            />
+            <datalist id="fill-level-suggestions">
+              {FILL_LEVEL_SUGGESTIONS.map((level) => (
+                <option key={level} value={level} />
               ))}
-            </Select>
+            </datalist>
           </div>
           <div>
             <Label htmlFor="condition">Condition</Label>

@@ -32,7 +32,75 @@ export const PURCHASE_SOURCE_LABELS: Record<string, string> = {
   OTHER: "Other",
 };
 
-export const FILL_LEVEL_BANDS = [100, 90, 75, 50, 25] as const;
+// Fine-grained suggestions for the fill-level datalist — a few sprays
+// shouldn't force a jump straight from 100% to 90%.
+export const FILL_LEVEL_SUGGESTIONS = [
+  100, 99, 98, 97, 95, 90, 85, 80, 75, 70, 60, 50, 40, 30, 20, 10,
+] as const;
+
+// Standard retail bottle sizes, for the size-ml datalist.
+export const SIZE_ML_SUGGESTIONS = [
+  2, 5, 10, 15, 20, 30, 50, 60, 75, 90, 100, 125, 150, 200,
+] as const;
+
+// Common designer, niche, and Arabian/attar fragrance houses, for the
+// brand-name datalist. Not exhaustive — the field still accepts free text.
+export const BRAND_SUGGESTIONS = [
+  // Designer
+  "Chanel",
+  "Dior",
+  "Yves Saint Laurent",
+  "Gucci",
+  "Versace",
+  "Giorgio Armani",
+  "Prada",
+  "Burberry",
+  "Dolce & Gabbana",
+  "Calvin Klein",
+  "Hugo Boss",
+  "Ralph Lauren",
+  "Jean Paul Gaultier",
+  "Paco Rabanne",
+  "Valentino",
+  "Carolina Herrera",
+  "Bvlgari",
+  "Tom Ford",
+  "Marc Jacobs",
+  "Lancôme",
+  // Niche
+  "Amouage",
+  "Maison Francis Kurkdjian",
+  "Creed",
+  "Le Labo",
+  "Byredo",
+  "Parfums de Marly",
+  "Xerjoff",
+  "Nishane",
+  "Initio Parfums Privés",
+  "Roja Parfums",
+  "Kilian",
+  "Diptyque",
+  "Frederic Malle",
+  "Mancera",
+  "Montale",
+  "Nasomatto",
+  "Memo Paris",
+  "Acqua di Parma",
+  "Penhaligon's",
+  "Clive Christian",
+  // Arabian / attar houses
+  "Ajmal",
+  "Rasasi",
+  "Arabian Oud",
+  "Swiss Arabian",
+  "Lattafa",
+  "Al Haramain",
+  "Nabeel",
+  "Ard Al Zaafaran",
+  "My Perfumes",
+  "Junaid Perfumes",
+  "Afnan Perfumes",
+] as const;
 
 export const PHOTO_TYPE_LABELS: Record<string, string> = {
   FRONT: "Front",
