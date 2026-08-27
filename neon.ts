@@ -10,7 +10,7 @@ export default defineConfig({
       // app's existing model: URLs are unguessable (random UUID keys) but
       // not access-controlled — the same trust level the old local-disk
       // /public/uploads storage had.
-      uploads: {
+      "fragrance-exchange": {
         access: "public_read",
       },
     },

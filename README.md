@@ -19,12 +19,12 @@ anything else.
 
 This project is wired to the **Fragrance exchange** Neon project
 (`dry-union-17650627`, org `org-snowy-breeze-58936628`, region
-`us-east-2`). `neon.ts` declares the `uploads` bucket as infrastructure
+`us-east-2`). `neon.ts` declares the `fragrance-exchange` bucket as infrastructure
 as code; reconcile it against the linked branch with the Neon CLI:
 
 ```bash
 neon link      # once, links this workspace to the project/branch
-neon deploy    # provisions the uploads bucket, pulls env into .env.local
+neon deploy    # provisions the fragrance-exchange bucket, pulls env into .env.local
 ```
 
 ## Getting started
@@ -45,11 +45,11 @@ Vercel's serverless functions have no writable/persistent local disk, so
 this **must** run against Neon (not SQLite, not local disk for uploads).
 Set these as environment variables on the Vercel project (not just in a
 local `.env`) — get them from the Neon console (Connect, and the Storage
-tab for the `uploads` bucket) or `neon env pull`:
+tab for the `fragrance-exchange` bucket) or `neon env pull`:
 
 - `DATABASE_URL` / `DATABASE_URL_UNPOOLED` — Neon Postgres connection strings
 - `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_ENDPOINT_URL_S3` /
-  `AWS_REGION` — Neon Object Storage credentials for the `uploads` bucket
+  `AWS_REGION` — Neon Object Storage credentials for the `fragrance-exchange` bucket
 - `AUTH_SECRET` — a long random string (`openssl rand -base64 32`)
 - `ADMIN_EMAIL` — the email that should auto-promote to admin
 - `PAYSTACK_SECRET_KEY` / `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` — optional;

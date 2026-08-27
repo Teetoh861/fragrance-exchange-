@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { Files } from "files-sdk";
 import { neon } from "files-sdk/neon";
 
-const BUCKET = "uploads";
+const BUCKET = "fragrance-exchange";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -20,9 +20,9 @@ function getFilesClient(): Files {
 }
 
 /**
- * Stores an uploaded photo in the Neon Object Storage `uploads` bucket
- * (public_read) and returns its permanent public URL. Branches with the
- * database on Neon, so preview/dev branches get their own isolated files.
+ * Stores an uploaded photo in the Neon Object Storage `fragrance-exchange`
+ * bucket (public_read) and returns its permanent public URL. Branches with
+ * the database on Neon, so preview/dev branches get their own isolated files.
  */
 export async function saveUploadedFile(file: File): Promise<string> {
   if (!ALLOWED_TYPES.has(file.type)) {
