@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
+import { Combobox } from "@/components/ui/combobox";
 import { uploadPhoto } from "@/lib/client-upload";
 import {
   BRAND_SUGGESTIONS,
@@ -105,12 +106,7 @@ export default function NewListingPage() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="brand">Brand</Label>
-            <Input id="brand" name="brand" list="brand-suggestions" required maxLength={80} />
-            <datalist id="brand-suggestions">
-              {BRAND_SUGGESTIONS.map((brand) => (
-                <option key={brand} value={brand} />
-              ))}
-            </datalist>
+            <Combobox id="brand" name="brand" suggestions={BRAND_SUGGESTIONS} required maxLength={80} />
           </div>
           <div>
             <Label htmlFor="fragranceName">Fragrance name</Label>
@@ -160,37 +156,27 @@ export default function NewListingPage() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div>
             <Label htmlFor="sizeMl">Bottle size (ml)</Label>
-            <Input
+            <Combobox
               id="sizeMl"
               name="sizeMl"
               type="number"
-              list="size-ml-suggestions"
+              suggestions={SIZE_ML_SUGGESTIONS}
               min={1}
               max={2000}
               required
             />
-            <datalist id="size-ml-suggestions">
-              {SIZE_ML_SUGGESTIONS.map((size) => (
-                <option key={size} value={size} />
-              ))}
-            </datalist>
           </div>
           <div>
             <Label htmlFor="fillLevel">Fill level (%)</Label>
-            <Input
+            <Combobox
               id="fillLevel"
               name="fillLevel"
               type="number"
-              list="fill-level-suggestions"
+              suggestions={FILL_LEVEL_SUGGESTIONS}
               min={1}
               max={100}
               required
             />
-            <datalist id="fill-level-suggestions">
-              {FILL_LEVEL_SUGGESTIONS.map((level) => (
-                <option key={level} value={level} />
-              ))}
-            </datalist>
           </div>
           <div>
             <Label htmlFor="condition">Condition</Label>
