@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { saveUploadedFile } from "@/lib/storage";
+import { isOwnBucketUrl } from "@/lib/storage";
+
+const schema = z.object({
+  proofPhotoUrl: z.string().url(),
+  trackingNumber: z.string().trim().min(1).max(100),
+});
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,31 +25,26 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "This order can't be marked shipped right now." }, { status: 400 });
   }
 
-  const formData = await req.formData();
-  const proofFile = formData.get("proofPhoto") as File | null;
-  const trackingNumber = (formData.get("trackingNumber") as string | null)?.trim();
+  const body = await req.json().catch(() => null);
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "A shipment proof photo and tracking number are required." },
+      { status: 400 }
+    );
+  }
+  if (!isOwnBucketUrl(parsed.data.proofPhotoUrl)) {
+    return NextResponse.json({ error: "Invalid photo upload." }, { status: 400 });
+  }
 
-  if (!proofFile || proofFile.size === 0) {
-    return NextResponse.json({ error: "A photo of the packaged item is required." }, { status: 400 });
-  }
-  if (!trackingNumber) {
-    return NextResponse.json({ error: "Tracking / waybill number is required." }, { status: 400 });
-  }
-
-  try {
-    const proofUrl = await saveUploadedFile(proofFile);
-    await prisma.order.update({
-      where: { id },
-      data: {
-        status: "SHIPPED",
-        shipmentProofUrl: proofUrl,
-        trackingNumber,
-        shippedAt: new Date(),
-      },
-    });
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to mark as shipped.";
-    return NextResponse.json({ error: message }, { status: 400 });
-  }
+  await prisma.order.update({
+    where: { id },
+    data: {
+      status: "SHIPPED",
+      shipmentProofUrl: parsed.data.proofPhotoUrl,
+      trackingNumber: parsed.data.trackingNumber,
+      shippedAt: new Date(),
+    },
+  });
+  return NextResponse.json({ ok: true });
 }

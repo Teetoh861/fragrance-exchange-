@@ -2,16 +2,20 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { saveUploadedFile } from "@/lib/storage";
+import { isOwnBucketUrl } from "@/lib/storage";
 
-const categorySchema = z.enum([
-  "WRONG_ITEM",
-  "COUNTERFEIT_SUSPECTED",
-  "FILL_LEVEL_MISMATCH",
-  "DAMAGED",
-  "NOT_RECEIVED",
-  "OTHER",
-]);
+const schema = z.object({
+  category: z.enum([
+    "WRONG_ITEM",
+    "COUNTERFEIT_SUSPECTED",
+    "FILL_LEVEL_MISMATCH",
+    "DAMAGED",
+    "NOT_RECEIVED",
+    "OTHER",
+  ]),
+  description: z.string().trim().min(10).max(1000),
+  evidenceUrl: z.string().url().optional(),
+});
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,39 +33,29 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "A dispute can only be opened after the item has shipped." }, { status: 400 });
   }
 
-  const formData = await req.formData();
-  const category = categorySchema.safeParse(formData.get("category"));
-  const description = (formData.get("description") as string | null)?.trim();
-  const evidenceFile = formData.get("evidence") as File | null;
-
-  if (!category.success) {
-    return NextResponse.json({ error: "Please choose a valid dispute reason." }, { status: 400 });
+  const body = await req.json().catch(() => null);
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Please choose a reason and describe the problem in a bit more detail." },
+      { status: 400 }
+    );
   }
-  if (!description || description.length < 10) {
-    return NextResponse.json({ error: "Please describe the problem in a bit more detail." }, { status: 400 });
+  if (parsed.data.evidenceUrl && !isOwnBucketUrl(parsed.data.evidenceUrl)) {
+    return NextResponse.json({ error: "Invalid photo upload." }, { status: 400 });
   }
 
-  let evidenceUrl: string | undefined;
-  try {
-    if (evidenceFile && evidenceFile.size > 0) {
-      evidenceUrl = await saveUploadedFile(evidenceFile);
-    }
+  await prisma.$transaction([
+    prisma.dispute.create({
+      data: {
+        orderId: id,
+        category: parsed.data.category,
+        description: parsed.data.description,
+        evidenceUrl: parsed.data.evidenceUrl,
+      },
+    }),
+    prisma.order.update({ where: { id }, data: { status: "DISPUTED" } }),
+  ]);
 
-    await prisma.$transaction([
-      prisma.dispute.create({
-        data: {
-          orderId: id,
-          category: category.data,
-          description,
-          evidenceUrl,
-        },
-      }),
-      prisma.order.update({ where: { id }, data: { status: "DISPUTED" } }),
-    ]);
-
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to file dispute.";
-    return NextResponse.json({ error: message }, { status: 400 });
-  }
+  return NextResponse.json({ ok: true });
 }

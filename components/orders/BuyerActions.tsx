@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Label, Select, Textarea } from "@/components/ui/input";
+import { uploadPhoto } from "@/lib/client-upload";
 import { DISPUTE_CATEGORY_LABELS, UNBOXING_VIDEO_THRESHOLD } from "@/lib/constants";
 import { formatNaira } from "@/lib/utils";
 
@@ -30,17 +31,33 @@ export function BuyerActions({ orderId, pricePaid }: { orderId: string; pricePai
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const res = await fetch(`/api/orders/${orderId}/dispute`, {
-      method: "POST",
-      body: new FormData(e.currentTarget),
-    });
-    setLoading(false);
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Failed to file dispute.");
-      return;
+
+    try {
+      const formData = new FormData(e.currentTarget);
+      const evidenceFile = formData.get("evidence") as File | null;
+      const evidenceUrl = evidenceFile && evidenceFile.size > 0 ? await uploadPhoto(evidenceFile) : undefined;
+
+      const res = await fetch(`/api/orders/${orderId}/dispute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category: formData.get("category"),
+          description: formData.get("description"),
+          evidenceUrl,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Failed to file dispute.");
+        return;
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to file dispute.");
+    } finally {
+      setLoading(false);
     }
-    router.refresh();
   }
 
   return (

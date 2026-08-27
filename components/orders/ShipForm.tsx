@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import { uploadPhoto } from "@/lib/client-upload";
 
 export function ShipForm({ orderId }: { orderId: string }) {
   const router = useRouter();
@@ -15,18 +16,31 @@ export function ShipForm({ orderId }: { orderId: string }) {
     setError(null);
     setLoading(true);
 
-    const res = await fetch(`/api/orders/${orderId}/ship`, {
-      method: "POST",
-      body: new FormData(e.currentTarget),
-    });
+    try {
+      const formData = new FormData(e.currentTarget);
+      const proofFile = formData.get("proofPhoto") as File;
+      const proofPhotoUrl = await uploadPhoto(proofFile);
 
-    setLoading(false);
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Failed to mark as shipped.");
-      return;
+      const res = await fetch(`/api/orders/${orderId}/ship`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          proofPhotoUrl,
+          trackingNumber: formData.get("trackingNumber"),
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Failed to mark as shipped.");
+        return;
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to mark as shipped.");
+    } finally {
+      setLoading(false);
     }
-    router.refresh();
   }
 
   return (

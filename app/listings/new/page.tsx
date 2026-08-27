@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
+import { uploadPhoto } from "@/lib/client-upload";
 import {
   CATEGORY_LABELS,
   CONCENTRATION_LABELS,
@@ -15,11 +16,14 @@ import {
   PHOTO_TYPE_LABELS,
 } from "@/lib/constants";
 
+const ALL_PHOTO_TYPES = [...REQUIRED_PHOTO_TYPES, "BOX"] as const;
+
 export default function NewListingPage() {
   const router = useRouter();
   const [swapEnabled, setSwapEnabled] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -37,17 +41,54 @@ export default function NewListingPage() {
     }
 
     setLoading(true);
-    const res = await fetch("/api/listings", { method: "POST", body: formData });
-    setLoading(false);
 
-    if (!res.ok) {
+    try {
+      const photos: { url: string; photoType: string }[] = [];
+      for (const type of ALL_PHOTO_TYPES) {
+        const file = formData.get(`photo_${type}`) as File | null;
+        if (!file || file.size === 0) continue;
+        setUploadStatus(`Uploading ${PHOTO_TYPE_LABELS[type]} photo…`);
+        const url = await uploadPhoto(file);
+        photos.push({ url, photoType: type });
+      }
+
+      setUploadStatus("Submitting listing…");
+      const res = await fetch("/api/listings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          brand: formData.get("brand"),
+          fragranceName: formData.get("fragranceName"),
+          category: formData.get("category"),
+          gender: formData.get("gender"),
+          concentration: formData.get("concentration"),
+          sizeMl: formData.get("sizeMl"),
+          fillLevel: formData.get("fillLevel"),
+          condition: formData.get("condition"),
+          purchaseSource: formData.get("purchaseSource"),
+          price: formData.get("price"),
+          marketPrice: formData.get("marketPrice") || undefined,
+          negotiable: formData.get("negotiable") === "on",
+          swapEnabled: formData.get("swapEnabled") === "on",
+          desiredFragrances: formData.get("desiredFragrances") ?? undefined,
+          cashTopupOk: formData.get("cashTopupOk") === "on",
+          photos,
+        }),
+      });
+
       const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Failed to submit listing.");
-      return;
-    }
+      if (!res.ok) {
+        setError(data.error ?? "Failed to submit listing.");
+        return;
+      }
 
-    const data = await res.json();
-    router.push(`/listings/${data.id}?submitted=1`);
+      router.push(`/listings/${data.id}?submitted=1`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to submit listing.");
+    } finally {
+      setLoading(false);
+      setUploadStatus(null);
+    }
   }
 
   return (
@@ -240,7 +281,7 @@ export default function NewListingPage() {
         {error && <p className="text-sm text-red-700">{error}</p>}
 
         <Button type="submit" size="lg" className="w-full" disabled={loading}>
-          {loading ? "Submitting…" : "Submit for review"}
+          {loading ? uploadStatus ?? "Submitting…" : "Submit for review"}
         </Button>
       </form>
     </div>

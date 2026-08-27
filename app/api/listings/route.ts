@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { PhotoType } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { saveUploadedFile } from "@/lib/storage";
+import { isOwnBucketUrl } from "@/lib/storage";
 import { REQUIRED_PHOTO_TYPES } from "@/lib/constants";
+
+const photoSchema = z.object({
+  url: z.string().url(),
+  photoType: z.enum(["FRONT", "BACK", "BASE", "CAP", "BOX"]),
+});
 
 const listingSchema = z.object({
   brand: z.string().trim().min(1).max(80),
@@ -22,6 +26,7 @@ const listingSchema = z.object({
   swapEnabled: z.coerce.boolean(),
   desiredFragrances: z.string().trim().max(500).optional(),
   cashTopupOk: z.coerce.boolean(),
+  photos: z.array(photoSchema).min(1),
 });
 
 export async function POST(req: Request) {
@@ -30,26 +35,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "You must be logged in." }, { status: 401 });
   }
 
-  const formData = await req.formData();
-
-  const parsed = listingSchema.safeParse({
-    brand: formData.get("brand"),
-    fragranceName: formData.get("fragranceName"),
-    category: formData.get("category"),
-    gender: formData.get("gender"),
-    concentration: formData.get("concentration"),
-    sizeMl: formData.get("sizeMl"),
-    fillLevel: formData.get("fillLevel"),
-    condition: formData.get("condition"),
-    purchaseSource: formData.get("purchaseSource"),
-    price: formData.get("price"),
-    marketPrice: formData.get("marketPrice") || undefined,
-    negotiable: formData.get("negotiable") === "on" || formData.get("negotiable") === "true",
-    swapEnabled: formData.get("swapEnabled") === "on" || formData.get("swapEnabled") === "true",
-    desiredFragrances: formData.get("desiredFragrances") ?? undefined,
-    cashTopupOk: formData.get("cashTopupOk") === "on" || formData.get("cashTopupOk") === "true",
-  });
-
+  const body = await req.json().catch(() => null);
+  const parsed = listingSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Please check your listing details.", issues: parsed.error.flatten() },
@@ -57,31 +44,23 @@ export async function POST(req: Request) {
     );
   }
 
-  const photoEntries = REQUIRED_PHOTO_TYPES.map((type) => ({
-    type,
-    file: formData.get(`photo_${type}`) as File | null,
-  }));
-  const boxFile = formData.get("photo_BOX") as File | null;
+  // Photos are uploaded directly to Neon Object Storage by the client (see
+  // /api/uploads/presign); only accept URLs that actually landed in our
+  // bucket, not arbitrary client-supplied URLs.
+  if (parsed.data.photos.some((p) => !isOwnBucketUrl(p.url))) {
+    return NextResponse.json({ error: "Invalid photo upload." }, { status: 400 });
+  }
 
-  const missing = photoEntries.filter((p) => !p.file || p.file.size === 0);
+  const providedTypes = new Set(parsed.data.photos.map((p) => p.photoType));
+  const missing = REQUIRED_PHOTO_TYPES.filter((t) => !providedTypes.has(t));
   if (missing.length > 0) {
     return NextResponse.json(
-      { error: `Missing required photos: ${missing.map((m) => m.type).join(", ")}.` },
+      { error: `Missing required photos: ${missing.join(", ")}.` },
       { status: 400 }
     );
   }
 
   try {
-    const savedPhotos: { url: string; photoType: PhotoType }[] = [];
-    for (const entry of photoEntries) {
-      const url = await saveUploadedFile(entry.file as File);
-      savedPhotos.push({ url, photoType: entry.type as PhotoType });
-    }
-    if (boxFile && boxFile.size > 0) {
-      const url = await saveUploadedFile(boxFile);
-      savedPhotos.push({ url, photoType: "BOX" });
-    }
-
     const listing = await prisma.listing.create({
       data: {
         sellerId: session.user.id,
@@ -101,7 +80,7 @@ export async function POST(req: Request) {
         desiredFragrances: parsed.data.swapEnabled ? parsed.data.desiredFragrances ?? null : null,
         cashTopupOk: parsed.data.swapEnabled ? parsed.data.cashTopupOk : false,
         status: "PENDING_REVIEW",
-        photos: { create: savedPhotos },
+        photos: { create: parsed.data.photos },
       },
     });
 
