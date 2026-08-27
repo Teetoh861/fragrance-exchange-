@@ -1,16 +1,28 @@
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 import { randomUUID } from "crypto";
+import { Files } from "files-sdk";
+import { neon } from "files-sdk/neon";
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR || "./public/uploads";
+const BUCKET = "uploads";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_BYTES = 8 * 1024 * 1024;
 
+// Constructed lazily (not at module load) so importing this module never
+// crashes build-time page-data collection or requests unrelated to uploads
+// when AWS_ENDPOINT_URL_S3 isn't set (e.g. a fresh checkout before `neon
+// deploy`/env pull has run).
+let filesClient: Files | undefined;
+function getFilesClient(): Files {
+  if (!filesClient) {
+    filesClient = new Files({ adapter: neon({ bucket: BUCKET }) });
+  }
+  return filesClient;
+}
+
 /**
- * Stores an uploaded photo on local disk under /public/uploads and returns
- * its public URL. Swap this implementation for a real object store
- * (S3/Cloudinary/Supabase Storage) when deploying beyond a single instance.
+ * Stores an uploaded photo in the Neon Object Storage `uploads` bucket
+ * (public_read) and returns its permanent public URL. Branches with the
+ * database on Neon, so preview/dev branches get their own isolated files.
  */
 export async function saveUploadedFile(file: File): Promise<string> {
   if (!ALLOWED_TYPES.has(file.type)) {
@@ -20,14 +32,16 @@ export async function saveUploadedFile(file: File): Promise<string> {
     throw new Error("File is too large (max 8MB).");
   }
 
-  const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
-  const filename = `${randomUUID()}.${ext}`;
+  const endpoint = process.env.AWS_ENDPOINT_URL_S3?.replace(/\/$/, "");
+  if (!endpoint) {
+    throw new Error("Neon Object Storage is not configured (AWS_ENDPOINT_URL_S3 missing).");
+  }
 
-  const dir = path.resolve(process.cwd(), UPLOAD_DIR.replace(/^\.\//, ""));
-  await mkdir(dir, { recursive: true });
+  const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+  const key = `${randomUUID()}.${ext}`;
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(dir, filename), buffer);
+  await getFilesClient().upload(key, buffer, { contentType: file.type });
 
-  return `/uploads/${filename}`;
+  return `${endpoint}/${BUCKET}/${key}`;
 }

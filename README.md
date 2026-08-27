@@ -9,21 +9,30 @@ anything else.
 ## Stack
 
 - **Next.js 16** (App Router) + TypeScript + Tailwind
-- **Prisma** ORM on **Postgres** (a free [Neon](https://neon.tech) or
-  [Supabase](https://supabase.com) project works well for both local dev
-  and production — see `prisma/schema.prisma`)
+- **Prisma** ORM on **Neon Postgres** — pooled connection for app traffic
+  (`DATABASE_URL`), direct connection for schema pushes
+  (`DATABASE_URL_UNPOOLED`) — see `prisma/schema.prisma`
 - **NextAuth v5** — email/password (credentials) + optional Google OAuth
 - **Paystack** for Buy Now and swap cash top-ups
-- Local disk file storage for listing/shipment photos under
-  `public/uploads` (see `lib/storage.ts` — swap for S3/Cloudinary/Supabase
-  Storage before deploying beyond a single instance)
+- **Neon Object Storage** (S3-compatible) for listing/shipment photo
+  uploads — see `lib/storage.ts` and `neon.ts`
+
+This project is wired to the **Fragrance exchange** Neon project
+(`dry-union-17650627`, org `org-snowy-breeze-58936628`, region
+`us-east-2`). `neon.ts` declares the `uploads` bucket as infrastructure
+as code; reconcile it against the linked branch with the Neon CLI:
+
+```bash
+neon link      # once, links this workspace to the project/branch
+neon deploy    # provisions the uploads bucket, pulls env into .env.local
+```
 
 ## Getting started
 
 ```bash
 pnpm install
-cp .env.example .env   # fill in DATABASE_URL, AUTH_SECRET, ADMIN_EMAIL, etc.
-npx prisma db push     # syncs the schema to your Postgres database
+cp .env.example .env   # fill in DATABASE_URL(_UNPOOLED), AUTH_SECRET, ADMIN_EMAIL, AWS_*, etc.
+npx prisma db push     # syncs the schema to Neon Postgres
 pnpm dev
 ```
 
@@ -33,10 +42,14 @@ provisions its tables without a separate migration step.
 ### Deploying (e.g. to Vercel)
 
 Vercel's serverless functions have no writable/persistent local disk, so
-this **must** run against a real Postgres database — set these as
-environment variables on the project (not just in a local `.env`):
+this **must** run against Neon (not SQLite, not local disk for uploads).
+Set these as environment variables on the Vercel project (not just in a
+local `.env`) — get them from the Neon console (Connect, and the Storage
+tab for the `uploads` bucket) or `neon env pull`:
 
-- `DATABASE_URL` — your Postgres connection string
+- `DATABASE_URL` / `DATABASE_URL_UNPOOLED` — Neon Postgres connection strings
+- `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_ENDPOINT_URL_S3` /
+  `AWS_REGION` — Neon Object Storage credentials for the `uploads` bucket
 - `AUTH_SECRET` — a long random string (`openssl rand -base64 32`)
 - `ADMIN_EMAIL` — the email that should auto-promote to admin
 - `PAYSTACK_SECRET_KEY` / `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` — optional;

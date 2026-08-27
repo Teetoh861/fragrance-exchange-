@@ -34,13 +34,8 @@ yarn-error.log*
 .env*
 !.env.example
 
-# sqlite dev database
-/prisma/*.db
-/prisma/*.db-journal
-
-# local uploads
-/public/uploads/*
-!/public/uploads/.gitkeep
+# .neon (link/branch pointer written by the Neon CLI)
+.neon
 
 # vercel
 .vercel
