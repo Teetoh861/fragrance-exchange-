@@ -11,7 +11,7 @@ import { formatDate, formatNaira } from "@/lib/utils";
 export default async function AccountPage() {
   const user = await requireUser();
 
-  const [profile, listings, ordersAsBuyer, ordersAsSeller, swapOffers] = await Promise.all([
+  const [profile, listings, ordersAsBuyer, ordersAsSeller, swapOffers, priceOffers] = await Promise.all([
     prisma.user.findUniqueOrThrow({ where: { id: user.id } }),
     prisma.listing.findMany({
       where: { sellerId: user.id },
@@ -34,6 +34,13 @@ export default async function AccountPage() {
       },
       orderBy: { createdAt: "desc" },
       include: { listing: true, offeredListing: true, offerer: true },
+    }),
+    prisma.priceOffer.findMany({
+      where: {
+        OR: [{ buyerId: user.id }, { listing: { sellerId: user.id } }],
+      },
+      orderBy: { createdAt: "desc" },
+      include: { listing: true, buyer: true },
     }),
   ]);
 
@@ -113,7 +120,7 @@ export default async function AccountPage() {
         )}
       </section>
 
-      <section>
+      <section className="mb-10">
         <h2 className="mb-3 text-lg font-semibold text-stone-900">My Swap Offers</h2>
         {swapOffers.length === 0 ? (
           <p className="text-sm text-muted">No swap offers sent or received yet.</p>
@@ -130,6 +137,29 @@ export default async function AccountPage() {
                   {s.offeredListing.brand} for {s.listing.brand}
                 </span>
                 <Badge tone={statusTone(s.status)}>{s.status}</Badge>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-lg font-semibold text-stone-900">My Price Offers</h2>
+        {priceOffers.length === 0 ? (
+          <p className="text-sm text-muted">No price offers sent or received yet.</p>
+        ) : (
+          <div className="divide-y divide-border rounded-xl border border-border bg-card">
+            {priceOffers.map((o) => (
+              <Link
+                key={o.id}
+                href={`/offers/${o.id}`}
+                className="flex items-center justify-between px-4 py-3 text-sm hover:bg-stone-50"
+              >
+                <span>
+                  {o.buyerId === user.id ? "You offered" : `${o.buyer.name} offered`}{" "}
+                  {formatNaira(o.offerPrice)} for {o.listing.brand}
+                </span>
+                <Badge tone={statusTone(o.status)}>{o.status}</Badge>
               </Link>
             ))}
           </div>

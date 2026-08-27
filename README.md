@@ -70,13 +70,22 @@ checkout redirect + verification flow.
 ## Core flows
 
 - **Seller**: sign up → create listing (4 required photos: front, back,
-  base/batch code, cap) → Pending Review → admin approves/rejects → live →
-  buyer purchases or proposes a swap → seller ships with proof photo +
-  tracking number → buyer confirms receipt → seller queued for manual
-  payout.
-- **Buyer**: browse/search → listing detail → Buy Now (Paystack) or
-  Propose Swap → order status timeline (Paid → Shipped → Completed) →
-  confirm receipt or open a dispute.
+  base/batch code, cap; optional market/retail price shown alongside the
+  asking price; optional "open to negotiation") → Pending Review → admin
+  approves/rejects → live → buyer purchases, makes an offer, or proposes a
+  swap → seller ships with proof photo + tracking number → buyer confirms
+  receipt → seller queued for manual payout.
+- **Buyer**: browse/search → listing detail → Buy Now or Make an Offer →
+  a confirm page shows the price and the payment-holding disclaimer before
+  charging (Paystack, or mock instant-pay in dev) → order status timeline
+  (Paid → Shipped → Completed) → confirm receipt or open a dispute.
+- **Negotiation**: buyer proposes a cash price on a listing marked "open to
+  negotiation" → seller accepts (reserving the listing and declining any
+  other pending offers) or declines → on acceptance the buyer completes
+  checkout at the offered price via the same confirm-and-pay flow.
+- A sold or reserved listing stays visible with a status badge instead of
+  disappearing — only pending-review/rejected listings are hidden from the
+  public.
 - **Swap**: buyer offers one of their own live listings + optional cash
   top-up → owner accepts/declines → on acceptance both listings are
   reserved and two mirrored orders are created so each side ships and

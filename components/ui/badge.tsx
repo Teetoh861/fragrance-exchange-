@@ -26,14 +26,17 @@ export function statusTone(status: string): keyof typeof tones {
     case "LIVE":
     case "COMPLETED":
     case "PAID":
+    case "ACCEPTED":
       return "green";
     case "PENDING_REVIEW":
     case "AWAITING_SHIPMENT":
     case "SHIPPED":
+    case "PENDING":
       return "amber";
     case "REJECTED":
     case "DISPUTED":
     case "CANCELLED":
+    case "DECLINED":
       return "red";
     case "RESERVED":
     case "DELIVERED":

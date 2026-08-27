@@ -89,6 +89,12 @@ enum SwapOfferStatus {
   CANCELLED
 }
 
+enum PriceOfferStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
 enum DisputeCategory {
   WRONG_ITEM
   COUNTERFEIT_SUSPECTED
@@ -117,10 +123,11 @@ model User {
   joinDate         DateTime @default(now())
   transactionCount Int      @default(0)
 
-  listings       Listing[]
-  ordersAsBuyer  Order[]        @relation("BuyerOrders")
-  ordersAsSeller Order[]        @relation("SellerOrders")
-  swapOffersSent SwapOffer[]    @relation("SwapOfferer")
+  listings        Listing[]
+  ordersAsBuyer   Order[]        @relation("BuyerOrders")
+  ordersAsSeller  Order[]        @relation("SellerOrders")
+  swapOffersSent  SwapOffer[]    @relation("SwapOfferer")
+  priceOffersSent PriceOffer[]   @relation("PriceOfferer")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -141,6 +148,8 @@ model Listing {
   condition         Condition
   purchaseSource    PurchaseSource
   price             Int
+  marketPrice       Int?
+  negotiable        Boolean        @default(false)
   swapEnabled       Boolean        @default(false)
   desiredFragrances String?
   cashTopupOk       Boolean        @default(false)
@@ -153,6 +162,7 @@ model Listing {
   ordersAsItem      Order[]        @relation("ListingOrders")
   swapOffersWanted  SwapOffer[]    @relation("WantedListing")
   swapOffersOffered SwapOffer[]    @relation("OfferedListing")
+  priceOffers       PriceOffer[]   @relation("PriceOfferedListing")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -215,6 +225,20 @@ model SwapOffer {
   paystackRef        String?
 
   status             SwapOfferStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PriceOffer {
+  id         String            @id @default(cuid())
+  listingId  String
+  listing    Listing           @relation("PriceOfferedListing", fields: [listingId], references: [id])
+  buyerId    String
+  buyer      User              @relation("PriceOfferer", fields: [buyerId], references: [id])
+
+  offerPrice Int
+  status     PriceOfferStatus  @default(PENDING)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -74,3 +74,12 @@ export const DISPUTE_CATEGORY_LABELS: Record<string, string> = {
 export const UNBOXING_VIDEO_THRESHOLD = 50000;
 
 export const INSPECTION_WINDOW_HOURS = 48;
+
+export const PRICE_OFFER_STATUS_LABELS: Record<string, string> = {
+  PENDING: "Pending",
+  ACCEPTED: "Accepted",
+  DECLINED: "Declined",
+};
+
+export const ESCROW_DISCLAIMER =
+  "We hold your payment until you confirm delivery, then release it to the seller. This is not licensed escrow and your funds are not protected by escrow law.";

@@ -157,8 +157,21 @@ export default function NewListingPage() {
             </Select>
           </div>
           <div>
-            <Label htmlFor="price">Price (₦)</Label>
+            <Label htmlFor="marketPrice">Current market / retail price (₦, optional)</Label>
+            <Input id="marketPrice" name="marketPrice" type="number" min={500} />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="price">Your asking price (₦)</Label>
             <Input id="price" name="price" type="number" min={500} required />
+          </div>
+          <div className="flex items-end pb-2">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input type="checkbox" name="negotiable" />
+              Open to negotiation
+            </label>
           </div>
         </div>
 

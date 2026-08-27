@@ -22,7 +22,7 @@ export async function GET(req: Request) {
     }
 
     const metadata = tx.metadata as
-      | { listingId: string; buyerId: string; type: string }
+      | { listingId: string; buyerId: string; offerId?: string; type: string }
       | undefined;
 
     if (!metadata?.listingId || !metadata?.buyerId) {
@@ -34,13 +34,21 @@ export async function GET(req: Request) {
       return NextResponse.redirect(new URL("/browse?error=listing_not_found", url.origin));
     }
 
+    let pricePaid = listing.price;
+    if (metadata.offerId) {
+      const offer = await prisma.priceOffer.findUnique({ where: { id: metadata.offerId } });
+      if (offer && offer.status === "ACCEPTED") {
+        pricePaid = offer.offerPrice;
+      }
+    }
+
     const order = await prisma.order.create({
       data: {
         listingId: listing.id,
         buyerId: metadata.buyerId,
         sellerId: listing.sellerId,
         type: "PURCHASE",
-        pricePaid: listing.price,
+        pricePaid,
         status: "PAID",
         paystackRef: reference,
       },

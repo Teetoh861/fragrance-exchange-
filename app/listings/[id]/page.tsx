@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { Badge } from "@/components/ui/badge";
+import { Badge, statusTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BuyNowButton } from "@/components/BuyNowButton";
 import {
@@ -11,6 +11,7 @@ import {
   CONCENTRATION_LABELS,
   CONDITION_LABELS,
   GENDER_LABELS,
+  LISTING_STATUS_LABELS,
   PHOTO_TYPE_LABELS,
   PURCHASE_SOURCE_LABELS,
 } from "@/lib/constants";
@@ -45,7 +46,10 @@ export default async function ListingDetailPage({
   if (!listing) notFound();
 
   const isOwner = session?.user.id === listing.sellerId;
-  const isPubliclyVisible = listing.status === "LIVE";
+  // Live, reserved, and sold listings stay visible to everyone — a sale
+  // shouldn't make the listing vanish, it should show as "Sold".
+  const isPubliclyVisible = ["LIVE", "RESERVED", "SOLD"].includes(listing.status);
+  const isBuyable = listing.status === "LIVE";
 
   if (!isPubliclyVisible && !isOwner && session?.user.role !== "ADMIN") {
     notFound();
@@ -61,8 +65,14 @@ export default async function ListingDetailPage({
       )}
       {!isPubliclyVisible && (isOwner || session?.user.role === "ADMIN") && (
         <p className="mb-6 rounded-lg bg-stone-100 px-4 py-3 text-sm text-stone-700">
-          Status: <strong>{listing.status.replace("_", " ")}</strong> — only visible to you and
-          admins right now.
+          Status: <strong>{LISTING_STATUS_LABELS[listing.status]}</strong> — only visible to you
+          and admins right now.
+        </p>
+      )}
+      {isPubliclyVisible && !isBuyable && (
+        <p className="mb-6 rounded-lg bg-stone-100 px-4 py-3 text-sm text-stone-700">
+          This listing is <strong>{LISTING_STATUS_LABELS[listing.status].toLowerCase()}</strong>{" "}
+          and no longer available.
         </p>
       )}
 
@@ -85,12 +95,27 @@ export default async function ListingDetailPage({
             <Badge tone="neutral">{CATEGORY_LABELS[listing.category]}</Badge>
             <Badge tone="neutral">{GENDER_LABELS[listing.gender]}</Badge>
             {listing.swapEnabled && <Badge tone="blue">Swap available</Badge>}
+            {listing.negotiable && isBuyable && <Badge tone="purple">Open to negotiation</Badge>}
+            {!isBuyable && (
+              <Badge tone={statusTone(listing.status)}>{LISTING_STATUS_LABELS[listing.status]}</Badge>
+            )}
           </div>
 
           <h1 className="text-2xl font-bold text-stone-900">{listing.brand}</h1>
           <p className="text-lg text-muted">{listing.fragranceName}</p>
 
-          <p className="mt-4 text-3xl font-bold text-stone-900">{formatNaira(listing.price)}</p>
+          <div className="mt-4 flex items-baseline gap-3">
+            <p className="text-3xl font-bold text-stone-900">{formatNaira(listing.price)}</p>
+            {listing.marketPrice && listing.marketPrice > listing.price && (
+              <p className="text-sm text-muted line-through">{formatNaira(listing.marketPrice)}</p>
+            )}
+          </div>
+          {listing.marketPrice && listing.marketPrice > listing.price && (
+            <p className="text-xs text-emerald-700">
+              {Math.round((1 - listing.price / listing.marketPrice) * 100)}% below current market
+              price
+            </p>
+          )}
 
           <dl className="mt-6 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             <dt className="text-muted">Concentration</dt>
@@ -120,9 +145,16 @@ export default async function ListingDetailPage({
             </p>
           </div>
 
-          {isPubliclyVisible && !isOwner && (
+          {isBuyable && !isOwner && (
             <div className="mt-6 space-y-2">
               <BuyNowButton listingId={listing.id} loggedIn={Boolean(session?.user)} />
+              {listing.negotiable && (
+                <Link href={session ? `/listings/${listing.id}/make-offer` : `/login?callbackUrl=/listings/${listing.id}/make-offer`}>
+                  <Button variant="outline" size="lg" className="w-full">
+                    Make an Offer
+                  </Button>
+                </Link>
+              )}
               {listing.swapEnabled && (
                 <Link href={session ? `/listings/${listing.id}/propose-swap` : `/login?callbackUrl=/listings/${listing.id}/propose-swap`}>
                   <Button variant="outline" size="lg" className="w-full">
