@@ -1,0 +1,230 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ListingStatus {
+  PENDING_REVIEW
+  LIVE
+  RESERVED
+  SOLD
+  REJECTED
+}
+
+enum Category {
+  DESIGNER
+  NICHE
+  ARABIAN
+}
+
+enum Gender {
+  MEN
+  WOMEN
+  UNISEX
+}
+
+enum Concentration {
+  EDC
+  EDT
+  EDP
+  PARFUM
+  OIL
+  OTHER
+}
+
+enum Condition {
+  NEW
+  LIKE_NEW
+  USED_GOOD
+  USED_HEAVY
+}
+
+enum PurchaseSource {
+  RETAIL
+  GIFT
+  OTHER
+}
+
+enum PhotoType {
+  FRONT
+  BACK
+  BASE
+  CAP
+  BOX
+}
+
+enum OrderType {
+  PURCHASE
+  SWAP
+}
+
+enum OrderStatus {
+  PAID
+  AWAITING_SHIPMENT
+  SHIPPED
+  DELIVERED
+  COMPLETED
+  DISPUTED
+  CANCELLED
+}
+
+enum SwapOfferStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+}
+
+enum DisputeCategory {
+  WRONG_ITEM
+  COUNTERFEIT_SUSPECTED
+  FILL_LEVEL_MISMATCH
+  DAMAGED
+  NOT_RECEIVED
+  OTHER
+}
+
+enum DisputeStatus {
+  OPEN
+  RESOLVED
+}
+
+enum PayoutStatus {
+  PENDING
+  PAID_OUT
+}
+
+model User {
+  id               String   @id @default(cuid())
+  name             String
+  email            String   @unique
+  passwordHash     String?
+  role             Role     @default(USER)
+  joinDate         DateTime @default(now())
+  transactionCount Int      @default(0)
+
+  listings       Listing[]
+  ordersAsBuyer  Order[]        @relation("BuyerOrders")
+  ordersAsSeller Order[]        @relation("SellerOrders")
+  swapOffersSent SwapOffer[]    @relation("SwapOfferer")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Listing {
+  id                String         @id @default(cuid())
+  sellerId          String
+  seller            User           @relation(fields: [sellerId], references: [id])
+
+  brand             String
+  fragranceName     String
+  category          Category       @default(DESIGNER)
+  gender            Gender         @default(UNISEX)
+  concentration     Concentration
+  sizeMl            Int
+  fillLevel         Int
+  condition         Condition
+  purchaseSource    PurchaseSource
+  price             Int
+  swapEnabled       Boolean        @default(false)
+  desiredFragrances String?
+  cashTopupOk       Boolean        @default(false)
+
+  status            ListingStatus  @default(PENDING_REVIEW)
+  reviewNote        String?
+
+  photos            ListingPhoto[]
+
+  ordersAsItem      Order[]        @relation("ListingOrders")
+  swapOffersWanted  SwapOffer[]    @relation("WantedListing")
+  swapOffersOffered SwapOffer[]    @relation("OfferedListing")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([brand])
+}
+
+model ListingPhoto {
+  id        String    @id @default(cuid())
+  listingId String
+  listing   Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  url       String
+  photoType PhotoType
+  createdAt DateTime  @default(now())
+}
+
+model Order {
+  id               String      @id @default(cuid())
+  listingId        String
+  listing          Listing     @relation("ListingOrders", fields: [listingId], references: [id])
+  buyerId          String
+  buyer            User        @relation("BuyerOrders", fields: [buyerId], references: [id])
+  sellerId         String
+  seller           User        @relation("SellerOrders", fields: [sellerId], references: [id])
+
+  type             OrderType   @default(PURCHASE)
+  pricePaid        Int
+  status           OrderStatus @default(PAID)
+
+  paystackRef      String?
+
+  shipmentProofUrl String?
+  trackingNumber   String?
+
+  payoutStatus     PayoutStatus @default(PENDING)
+
+  dispute          Dispute?
+
+  createdAt   DateTime  @default(now())
+  shippedAt   DateTime?
+  deliveredAt DateTime?
+  completedAt DateTime?
+
+  @@index([status])
+}
+
+model SwapOffer {
+  id                 String          @id @default(cuid())
+  listingId          String
+  listing            Listing         @relation("WantedListing", fields: [listingId], references: [id])
+  offeredListingId    String
+  offeredListing      Listing         @relation("OfferedListing", fields: [offeredListingId], references: [id])
+  offererId          String
+  offerer            User            @relation("SwapOfferer", fields: [offererId], references: [id])
+
+  cashTopupAmount    Int             @default(0)
+  cashTopupPayer     String?
+  cashPaid           Boolean         @default(false)
+  paystackRef        String?
+
+  status             SwapOfferStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Dispute {
+  id             String          @id @default(cuid())
+  orderId        String          @unique
+  order          Order           @relation(fields: [orderId], references: [id])
+  category       DisputeCategory
+  description    String
+  evidenceUrl    String?
+  status         DisputeStatus   @default(OPEN)
+  resolutionNote String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
