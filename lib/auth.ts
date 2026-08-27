@@ -11,6 +11,10 @@ const googleEnabled = Boolean(
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
+  // Vercel serves preview + production deployments on multiple hostnames;
+  // trust whatever host the request arrives on instead of requiring a
+  // fixed AUTH_URL/NEXTAUTH_URL to match exactly.
+  trustHost: true,
   providers: [
     Credentials({
       name: "credentials",

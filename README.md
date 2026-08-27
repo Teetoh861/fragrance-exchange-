@@ -9,8 +9,9 @@ anything else.
 ## Stack
 
 - **Next.js 16** (App Router) + TypeScript + Tailwind
-- **Prisma** ORM on **SQLite** for local dev (swap the datasource for
-  Postgres in production — see `prisma/schema.prisma`)
+- **Prisma** ORM on **Postgres** (a free [Neon](https://neon.tech) or
+  [Supabase](https://supabase.com) project works well for both local dev
+  and production — see `prisma/schema.prisma`)
 - **NextAuth v5** — email/password (credentials) + optional Google OAuth
 - **Paystack** for Buy Now and swap cash top-ups
 - Local disk file storage for listing/shipment photos under
@@ -21,10 +22,25 @@ anything else.
 
 ```bash
 pnpm install
-cp .env.example .env   # fill in AUTH_SECRET, ADMIN_EMAIL, etc.
-npx prisma db push     # creates the local SQLite database
+cp .env.example .env   # fill in DATABASE_URL, AUTH_SECRET, ADMIN_EMAIL, etc.
+npx prisma db push     # syncs the schema to your Postgres database
 pnpm dev
 ```
+
+`pnpm build` also runs `prisma db push` automatically, so a first deploy
+provisions its tables without a separate migration step.
+
+### Deploying (e.g. to Vercel)
+
+Vercel's serverless functions have no writable/persistent local disk, so
+this **must** run against a real Postgres database — set these as
+environment variables on the project (not just in a local `.env`):
+
+- `DATABASE_URL` — your Postgres connection string
+- `AUTH_SECRET` — a long random string (`openssl rand -base64 32`)
+- `ADMIN_EMAIL` — the email that should auto-promote to admin
+- `PAYSTACK_SECRET_KEY` / `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` — optional;
+  without these, Buy Now and swap top-ups run in mock instant-pay mode
 
 Sign up with the email set as `ADMIN_EMAIL` in `.env` to get an admin
 account automatically — visit `/admin` to review listings, watch orders,
