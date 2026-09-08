@@ -26,6 +26,10 @@ const listingSchema = z.object({
   swapEnabled: z.coerce.boolean(),
   desiredFragrances: z.string().trim().max(500).optional(),
   cashTopupOk: z.coerce.boolean(),
+  country: z.string().trim().min(1).max(80),
+  state: z.string().trim().min(1).max(80),
+  city: z.string().trim().min(1).max(80),
+  logisticsNote: z.string().trim().max(300).optional(),
   photos: z.array(photoSchema).min(1),
 });
 
@@ -79,6 +83,10 @@ export async function POST(req: Request) {
         swapEnabled: parsed.data.swapEnabled,
         desiredFragrances: parsed.data.swapEnabled ? parsed.data.desiredFragrances ?? null : null,
         cashTopupOk: parsed.data.swapEnabled ? parsed.data.cashTopupOk : false,
+        country: parsed.data.country,
+        state: parsed.data.state,
+        city: parsed.data.city,
+        logisticsNote: parsed.data.logisticsNote || null,
         status: "PENDING_REVIEW",
         photos: { create: parsed.data.photos },
       },

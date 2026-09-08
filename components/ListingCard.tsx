@@ -12,6 +12,8 @@ type CardListing = {
   condition: string;
   swapEnabled: boolean;
   status: string;
+  city: string;
+  state: string;
   photos: { url: string }[];
 };
 
@@ -44,6 +46,11 @@ export function ListingCard({ listing }: { listing: CardListing }) {
       <div className="p-3">
         <p className="truncate text-sm font-semibold text-stone-900">{listing.brand}</p>
         <p className="truncate text-sm text-muted">{listing.fragranceName}</p>
+        {(listing.city || listing.state) && (
+          <p className="mt-0.5 truncate text-xs text-muted">
+            📍 {[listing.city, listing.state].filter(Boolean).join(", ")}
+          </p>
+        )}
         <div className="mt-2 flex items-center justify-between">
           <span className="font-bold text-stone-900">{formatNaira(listing.price)}</span>
           <Badge tone="neutral">{CONDITION_LABELS[listing.condition]}</Badge>

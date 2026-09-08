@@ -154,6 +154,13 @@ model Listing {
   desiredFragrances String?
   cashTopupOk       Boolean        @default(false)
 
+  // Defaults let `prisma db push` backfill existing rows created before
+  // location was required; new listings always set real values via the form.
+  country           String         @default("Nigeria")
+  state             String         @default("")
+  city              String         @default("")
+  logisticsNote     String?
+
   status            ListingStatus  @default(PENDING_REVIEW)
   reviewNote        String?
 
@@ -169,6 +176,7 @@ model Listing {
 
   @@index([status])
   @@index([brand])
+  @@index([country, state])
 }
 
 model ListingPhoto {

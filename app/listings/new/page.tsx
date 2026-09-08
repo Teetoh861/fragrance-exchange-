@@ -18,12 +18,14 @@ import {
   PHOTO_TYPE_LABELS,
   SIZE_ML_SUGGESTIONS,
 } from "@/lib/constants";
+import { COUNTRIES, NIGERIA_STATES } from "@/lib/locations";
 
 const ALL_PHOTO_TYPES = [...REQUIRED_PHOTO_TYPES, "BOX"] as const;
 
 export default function NewListingPage() {
   const router = useRouter();
   const [swapEnabled, setSwapEnabled] = useState(false);
+  const [country, setCountry] = useState("Nigeria");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
@@ -75,6 +77,10 @@ export default function NewListingPage() {
           swapEnabled: formData.get("swapEnabled") === "on",
           desiredFragrances: formData.get("desiredFragrances") ?? undefined,
           cashTopupOk: formData.get("cashTopupOk") === "on",
+          country: formData.get("country"),
+          state: formData.get("state"),
+          city: formData.get("city"),
+          logisticsNote: formData.get("logisticsNote") || undefined,
           photos,
         }),
       });
@@ -223,6 +229,59 @@ export default function NewListingPage() {
               <input type="checkbox" name="negotiable" />
               Open to negotiation
             </label>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="mb-3 text-sm font-medium text-stone-800">Location</p>
+          <p className="mb-3 text-xs text-muted">
+            Buyers see this before ordering, so no one in Lagos accidentally orders something
+            shipping from the UK.
+          </p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div>
+              <Label htmlFor="country">Country</Label>
+              <Combobox
+                id="country"
+                name="country"
+                suggestions={COUNTRIES}
+                defaultValue="Nigeria"
+                onChangeValue={setCountry}
+                required
+                maxLength={80}
+              />
+            </div>
+            <div>
+              <Label htmlFor="state">State / Region</Label>
+              {country === "Nigeria" ? (
+                <Select id="state" name="state" required defaultValue="">
+                  <option value="" disabled>
+                    Select
+                  </option>
+                  {NIGERIA_STATES.map((state) => (
+                    <option key={state} value={state}>
+                      {state}
+                    </option>
+                  ))}
+                </Select>
+              ) : (
+                <Input id="state" name="state" required maxLength={80} />
+              )}
+            </div>
+            <div>
+              <Label htmlFor="city">City / Area</Label>
+              <Input id="city" name="city" required maxLength={80} placeholder="e.g. Ikeja" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <Label htmlFor="logisticsNote">Pickup / delivery note (optional)</Label>
+            <Textarea
+              id="logisticsNote"
+              name="logisticsNote"
+              rows={2}
+              maxLength={300}
+              placeholder="e.g. Can meet for pickup in Lekki. Traveling to Abuja Sept 15 — can bring it if you're there."
+            />
           </div>
         </div>
 

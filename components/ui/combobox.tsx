@@ -20,6 +20,7 @@ export function Combobox({
   min,
   max,
   className,
+  onChangeValue,
 }: {
   id: string;
   name: string;
@@ -31,6 +32,8 @@ export function Combobox({
   min?: number;
   max?: number;
   className?: string;
+  /** Called with the current text on every change — for driving other fields (e.g. country -> state). */
+  onChangeValue?: (value: string) => void;
 }) {
   const [value, setValue] = useState(defaultValue ?? "");
   const [open, setOpen] = useState(false);
@@ -40,6 +43,11 @@ export function Combobox({
     .map(String)
     .filter((s) => s.toLowerCase().includes(value.toLowerCase()))
     .slice(0, 8);
+
+  function update(next: string) {
+    setValue(next);
+    onChangeValue?.(next);
+  }
 
   return (
     <div ref={containerRef} className="relative">
@@ -54,7 +62,7 @@ export function Combobox({
         required={required}
         maxLength={maxLength}
         autoComplete="off"
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => update(e.target.value)}
         onFocus={() => setOpen(true)}
         onBlur={() => {
           // Delay so a click on a suggestion registers before the list unmounts.
@@ -74,7 +82,7 @@ export function Combobox({
                 className="block w-full px-3 py-2 text-left text-sm hover:bg-stone-100"
                 onMouseDown={(e) => {
                   e.preventDefault(); // keep focus so onBlur doesn't fire first
-                  setValue(option);
+                  update(option);
                   setOpen(false);
                 }}
               >

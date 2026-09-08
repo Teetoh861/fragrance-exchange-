@@ -128,7 +128,17 @@ export default async function ListingDetailPage({
             <dd className="font-medium">{CONDITION_LABELS[listing.condition]}</dd>
             <dt className="text-muted">Purchase source</dt>
             <dd className="font-medium">{PURCHASE_SOURCE_LABELS[listing.purchaseSource]}</dd>
+            <dt className="text-muted">Location</dt>
+            <dd className="font-medium">
+              📍 {[listing.city, listing.state, listing.country].filter(Boolean).join(", ")}
+            </dd>
           </dl>
+
+          {listing.logisticsNote && (
+            <div className="mt-4 rounded-lg bg-stone-100 p-3 text-sm text-stone-700">
+              <strong>Pickup / delivery note:</strong> {listing.logisticsNote}
+            </div>
+          )}
 
           {listing.swapEnabled && listing.desiredFragrances && (
             <div className="mt-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-900">

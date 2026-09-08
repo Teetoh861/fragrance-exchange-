@@ -8,6 +8,7 @@ import {
   CONDITION_LABELS,
   GENDER_LABELS,
 } from "@/lib/constants";
+import { NIGERIA_STATES } from "@/lib/locations";
 
 type SearchParams = {
   q?: string;
@@ -17,6 +18,8 @@ type SearchParams = {
   condition?: string;
   minPrice?: string;
   maxPrice?: string;
+  country?: string;
+  state?: string;
   mode?: "sale" | "swap" | "both";
   sort?: "newest" | "price_asc" | "price_desc";
 };
@@ -41,6 +44,8 @@ export default async function BrowsePage({
   if (params.gender) where.gender = params.gender as never;
   if (params.condition) where.condition = params.condition as never;
   if (params.mode === "swap") where.swapEnabled = true;
+  if (params.country) where.country = { contains: params.country };
+  if (params.state) where.state = params.state;
 
   if (params.minPrice || params.maxPrice) {
     where.price = {
@@ -109,6 +114,20 @@ export default async function BrowsePage({
           <option value="sale">For sale</option>
           <option value="swap">Open to swap</option>
         </Select>
+        <Select name="state" defaultValue={params.state ?? ""}>
+          <option value="">Any state</option>
+          {NIGERIA_STATES.map((state) => (
+            <option key={state} value={state}>
+              {state}
+            </option>
+          ))}
+        </Select>
+        <input
+          name="country"
+          defaultValue={params.country}
+          placeholder="Country"
+          className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
+        />
         <input
           name="minPrice"
           type="number"
