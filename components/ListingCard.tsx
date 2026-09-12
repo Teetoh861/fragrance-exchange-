@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Badge } from "@/components/ui/badge";
-import { CONDITION_LABELS } from "@/lib/constants";
+import { Badge, statusTone } from "@/components/ui/badge";
+import { CONDITION_LABELS, LISTING_STATUS_LABELS } from "@/lib/constants";
 import { formatNaira } from "@/lib/utils";
 
 type CardListing = {
@@ -19,11 +19,14 @@ type CardListing = {
 
 export function ListingCard({ listing }: { listing: CardListing }) {
   const photo = listing.photos[0]?.url;
+  const isSoldOrReserved = listing.status === "SOLD" || listing.status === "RESERVED";
 
   return (
     <Link
       href={`/listings/${listing.id}`}
-      className="group block overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-md"
+      className={`group block overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-md ${
+        isSoldOrReserved ? "opacity-70" : ""
+      }`}
     >
       <div className="relative aspect-square w-full overflow-hidden bg-stone-100">
         {photo ? (
@@ -37,9 +40,14 @@ export function ListingCard({ listing }: { listing: CardListing }) {
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-muted">No photo</div>
         )}
-        {listing.swapEnabled && (
+        {listing.swapEnabled && !isSoldOrReserved && (
           <Badge tone="blue" className="absolute left-2 top-2">
             Swap available
+          </Badge>
+        )}
+        {isSoldOrReserved && (
+          <Badge tone={statusTone(listing.status)} className="absolute left-2 top-2">
+            {LISTING_STATUS_LABELS[listing.status as keyof typeof LISTING_STATUS_LABELS]}
           </Badge>
         )}
       </div>

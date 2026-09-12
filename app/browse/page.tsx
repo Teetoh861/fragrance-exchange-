@@ -8,6 +8,7 @@ import {
   CONDITION_LABELS,
   GENDER_LABELS,
 } from "@/lib/constants";
+import type { ListingStatus } from "@prisma/client";
 import { NIGERIA_STATES } from "@/lib/locations";
 
 type SearchParams = {
@@ -31,7 +32,10 @@ export default async function BrowsePage({
 }) {
   const params = await searchParams;
 
-  const where: Prisma.ListingWhereInput = { status: "LIVE" };
+  // A sold or reserved listing stays visible (with a status badge) instead
+  // of disappearing from the app — only pending-review/rejected listings
+  // are hidden here.
+  const where: Prisma.ListingWhereInput = { status: { in: ["LIVE", "RESERVED", "SOLD"] } };
 
   if (params.q) {
     where.OR = [
@@ -61,12 +65,23 @@ export default async function BrowsePage({
       ? { price: "desc" }
       : { createdAt: "desc" };
 
-  const listings = await prisma.listing.findMany({
+  const rawListings = await prisma.listing.findMany({
     where,
     orderBy,
     include: { photos: true },
     take: 60,
   });
+
+  // Show available listings first; sold/reserved ones stay visible further
+  // down rather than being filtered out entirely.
+  const statusOrder: Record<ListingStatus, number> = {
+    LIVE: 0,
+    RESERVED: 1,
+    SOLD: 2,
+    PENDING_REVIEW: 3,
+    REJECTED: 3,
+  };
+  const listings = [...rawListings].sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
