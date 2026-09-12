@@ -170,6 +170,7 @@ model Listing {
   swapOffersWanted  SwapOffer[]    @relation("WantedListing")
   swapOffersOffered SwapOffer[]    @relation("OfferedListing")
   priceOffers       PriceOffer[]   @relation("PriceOfferedListing")
+  reviews           Review[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -177,6 +178,23 @@ model Listing {
   @@index([status])
   @@index([brand])
   @@index([country, state])
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  listingId  String
+  listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  // Denormalized so seeded/mock reviews don't need a real User row.
+  authorId   String?
+  authorName String
+
+  rating     Int
+  body       String
+
+  createdAt DateTime @default(now())
+
+  @@index([listingId])
 }
 
 model ListingPhoto {
