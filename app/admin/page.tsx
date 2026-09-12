@@ -4,6 +4,7 @@ import { Badge, statusTone } from "@/components/ui/badge";
 import { ListingReviewRow } from "@/components/admin/ListingReviewRow";
 import { DisputeRow } from "@/components/admin/DisputeRow";
 import { PayoutRow } from "@/components/admin/PayoutRow";
+import { SeedReviewsButton } from "@/components/admin/SeedReviewsButton";
 import { ORDER_STATUS_LABELS } from "@/lib/constants";
 import { formatNaira } from "@/lib/utils";
 
@@ -100,6 +101,15 @@ export default async function AdminPage() {
             ))}
           </div>
         )}
+      </section>
+
+      <section className="mb-10">
+        <h2 className="mb-3 text-lg font-semibold text-stone-900">Sample Reviews</h2>
+        <p className="mb-3 text-sm text-muted">
+          One-time helper: adds a sample review to any live listing that doesn&apos;t have one yet,
+          so the reviews section isn&apos;t empty while the platform is new. Safe to click again later.
+        </p>
+        <SeedReviewsButton />
       </section>
 
       <section>
