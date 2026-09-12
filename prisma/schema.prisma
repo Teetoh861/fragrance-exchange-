@@ -170,7 +170,6 @@ model Listing {
   swapOffersWanted  SwapOffer[]    @relation("WantedListing")
   swapOffersOffered SwapOffer[]    @relation("OfferedListing")
   priceOffers       PriceOffer[]   @relation("PriceOfferedListing")
-  reviews           Review[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -180,21 +179,26 @@ model Listing {
   @@index([country, state])
 }
 
+// Standalone perfume recommendations/reviews — deliberately NOT tied to a
+// specific Listing. A marketplace listing is one seller's bottle and can be
+// sold and gone tomorrow; a review is about the fragrance itself ("is this
+// worth buying blind?") and should keep existing regardless of what's
+// currently for sale.
 model Review {
-  id         String   @id @default(cuid())
-  listingId  String
-  listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  brand         String
+  fragranceName String
 
   // Denormalized so seeded/mock reviews don't need a real User row.
   authorId   String?
   authorName String
 
-  rating     Int
-  body       String
+  rating Int
+  body   String
 
   createdAt DateTime @default(now())
 
-  @@index([listingId])
+  @@index([brand, fragranceName])
 }
 
 model ListingPhoto {

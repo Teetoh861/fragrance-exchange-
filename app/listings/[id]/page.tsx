@@ -6,7 +6,6 @@ import { auth } from "@/lib/auth";
 import { Badge, statusTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BuyNowButton } from "@/components/BuyNowButton";
-import { ReviewForm } from "@/components/ReviewForm";
 import {
   CATEGORY_LABELS,
   CONCENTRATION_LABELS,
@@ -41,16 +40,10 @@ export default async function ListingDetailPage({
           transactionCount: true,
         },
       },
-      reviews: { orderBy: { createdAt: "desc" } },
     },
   });
 
   if (!listing) notFound();
-
-  const avgRating =
-    listing.reviews.length > 0
-      ? listing.reviews.reduce((sum, r) => sum + r.rating, 0) / listing.reviews.length
-      : null;
 
   const isOwner = session?.user.id === listing.sellerId;
   // Live, reserved, and sold listings stay visible to everyone — a sale
@@ -110,16 +103,12 @@ export default async function ListingDetailPage({
 
           <h1 className="text-2xl font-bold text-stone-900">{listing.brand}</h1>
           <p className="text-lg text-muted">{listing.fragranceName}</p>
-          {avgRating && (
-            <p className="mt-1 text-sm text-amber-600">
-              {"★".repeat(Math.round(avgRating))}
-              {"☆".repeat(5 - Math.round(avgRating))}{" "}
-              <span className="text-muted">
-                {avgRating.toFixed(1)} ({listing.reviews.length} review
-                {listing.reviews.length === 1 ? "" : "s"})
-              </span>
-            </p>
-          )}
+          <Link
+            href={`/reviews?q=${encodeURIComponent(`${listing.brand} ${listing.fragranceName}`)}`}
+            className="mt-1 inline-block text-sm font-medium text-primary underline"
+          >
+            See reviews &amp; recommendations for this fragrance →
+          </Link>
 
           <div className="mt-4 flex items-baseline gap-3">
             <p className="text-3xl font-bold text-stone-900">{formatNaira(listing.price)}</p>
@@ -197,43 +186,6 @@ export default async function ListingDetailPage({
             &amp; safety notes in the site footer for more.
           </p>
         </div>
-      </div>
-
-      <div className="mt-10 border-t border-border pt-8">
-        <h2 className="mb-4 text-xl font-bold text-stone-900">
-          Reviews of {listing.brand} {listing.fragranceName}
-        </h2>
-
-        {listing.reviews.length === 0 ? (
-          <p className="text-sm text-muted">No reviews yet — be the first to share how it wears.</p>
-        ) : (
-          <ul className="mb-6 space-y-4">
-            {listing.reviews.map((review) => (
-              <li key={review.id} className="rounded-lg border border-border p-3">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium text-stone-800">{review.authorName}</p>
-                  <p className="text-amber-500">
-                    {"★".repeat(review.rating)}
-                    {"☆".repeat(5 - review.rating)}
-                  </p>
-                </div>
-                <p className="mt-1 text-sm text-stone-700">{review.body}</p>
-                <p className="mt-1 text-xs text-muted">{formatDate(review.createdAt)}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {session?.user ? (
-          <ReviewForm listingId={listing.id} />
-        ) : (
-          <p className="text-sm text-muted">
-            <Link href={`/login?callbackUrl=/listings/${listing.id}`} className="underline">
-              Log in
-            </Link>{" "}
-            to leave a review.
-          </p>
-        )}
       </div>
     </div>
   );

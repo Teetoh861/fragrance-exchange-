@@ -104,10 +104,11 @@ export default async function AdminPage() {
       </section>
 
       <section className="mb-10">
-        <h2 className="mb-3 text-lg font-semibold text-stone-900">Sample Reviews</h2>
+        <h2 className="mb-3 text-lg font-semibold text-stone-900">Sample Reviews &amp; Recommendations</h2>
         <p className="mb-3 text-sm text-muted">
-          One-time helper: adds a sample review to any live listing that doesn&apos;t have one yet,
-          so the reviews section isn&apos;t empty while the platform is new. Safe to click again later.
+          One-time helper: adds a handful of sample perfume reviews and layering tips to the
+          standalone Reviews page so it isn&apos;t empty while the platform is new. Only runs once —
+          safe to click even if it&apos;s already been seeded.
         </p>
         <SeedReviewsButton />
       </section>

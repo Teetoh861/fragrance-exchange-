@@ -32,7 +32,7 @@ export default async function Home() {
               Search
             </Button>
           </form>
-          <div className="mt-6 flex justify-center gap-3">
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link href="/browse">
               <Button variant="outline">Browse listings</Button>
             </Link>
@@ -40,6 +40,13 @@ export default async function Home() {
               <Button>List your perfume</Button>
             </Link>
           </div>
+          <p className="mt-4 text-sm text-muted">
+            Not sure what to buy?{" "}
+            <Link href="/reviews" className="font-medium text-primary underline">
+              See perfume reviews &amp; layering recommendations
+            </Link>{" "}
+            before you blind-buy.
+          </p>
         </div>
       </section>
 

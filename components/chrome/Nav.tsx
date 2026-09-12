@@ -15,6 +15,9 @@ export default async function Nav() {
           <Link href="/browse" className="hover:text-primary">
             Browse
           </Link>
+          <Link href="/reviews" className="hover:text-primary">
+            Reviews
+          </Link>
           {session && (
             <Link href="/listings/new" className="hover:text-primary">
               List your perfume
