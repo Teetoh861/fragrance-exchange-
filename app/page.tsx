@@ -2,14 +2,21 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { ListingCard } from "@/components/ListingCard";
 import { Button } from "@/components/ui/button";
+import { formatDate } from "@/lib/utils";
 
 export default async function Home() {
-  const listings = await prisma.listing.findMany({
-    where: { status: "LIVE" },
-    orderBy: { createdAt: "desc" },
-    take: 8,
-    include: { photos: true },
-  });
+  const [listings, reviews] = await Promise.all([
+    prisma.listing.findMany({
+      where: { status: "LIVE" },
+      orderBy: { createdAt: "desc" },
+      take: 8,
+      include: { photos: true },
+    }),
+    prisma.review.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 4,
+    }),
+  ]);
 
   return (
     <div>
@@ -40,13 +47,6 @@ export default async function Home() {
               <Button>List your perfume</Button>
             </Link>
           </div>
-          <p className="mt-4 text-sm text-muted">
-            Not sure what to buy?{" "}
-            <Link href="/reviews" className="font-medium text-primary underline">
-              See perfume reviews &amp; layering recommendations
-            </Link>{" "}
-            before you blind-buy.
-          </p>
         </div>
       </section>
 
@@ -69,6 +69,51 @@ export default async function Home() {
             ))}
           </div>
         )}
+      </section>
+
+      <section className="border-t border-border bg-card/50">
+        <div className="mx-auto max-w-6xl px-4 py-12">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-stone-900">Perfume reviews &amp; recommendations</h2>
+            <Link href="/reviews" className="text-sm font-medium text-primary">
+              View all
+            </Link>
+          </div>
+          <p className="mb-6 text-sm text-muted">
+            Real feedback and layering tips, so you can avoid a blind buy before you spend your
+            money.
+          </p>
+
+          {reviews.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-border p-8 text-center text-muted">
+              No reviews yet —{" "}
+              <Link href="/reviews" className="underline">
+                be the first to share one
+              </Link>
+              .
+            </p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {reviews.map((review) => (
+                <div key={review.id} className="rounded-lg border border-border bg-card p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-stone-900">
+                      {review.brand} — {review.fragranceName}
+                    </p>
+                    <p className="text-amber-500">
+                      {"★".repeat(review.rating)}
+                      {"☆".repeat(5 - review.rating)}
+                    </p>
+                  </div>
+                  <p className="mt-1 text-sm text-stone-700">{review.body}</p>
+                  <p className="mt-2 text-xs text-muted">
+                    {review.authorName} · {formatDate(review.createdAt)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );
