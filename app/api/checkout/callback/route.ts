@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPaystackTransaction } from "@/lib/paystack";
+import { notifyNewOrder } from "@/lib/email";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -29,10 +30,18 @@ export async function GET(req: Request) {
       return NextResponse.redirect(new URL("/browse?error=missing_metadata", url.origin));
     }
 
-    const listing = await prisma.listing.findUnique({ where: { id: metadata.listingId } });
+    const listing = await prisma.listing.findUnique({
+      where: { id: metadata.listingId },
+      include: { seller: { select: { email: true, name: true } } },
+    });
     if (!listing) {
       return NextResponse.redirect(new URL("/browse?error=listing_not_found", url.origin));
     }
+
+    const buyer = await prisma.user.findUnique({
+      where: { id: metadata.buyerId },
+      select: { name: true },
+    });
 
     let pricePaid = listing.price;
     if (metadata.offerId) {
@@ -55,6 +64,17 @@ export async function GET(req: Request) {
     });
 
     await prisma.listing.update({ where: { id: listing.id }, data: { status: "SOLD" } });
+
+    await notifyNewOrder({
+      sellerEmail: listing.seller.email,
+      sellerName: listing.seller.name,
+      buyerName: buyer?.name ?? "A buyer",
+      brand: listing.brand,
+      fragranceName: listing.fragranceName,
+      pricePaid,
+      orderId: order.id,
+      origin: url.origin,
+    });
 
     return NextResponse.redirect(new URL(`/orders/${order.id}`, url.origin));
   } catch {

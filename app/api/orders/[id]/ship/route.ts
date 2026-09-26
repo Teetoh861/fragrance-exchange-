@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isOwnBucketUrl } from "@/lib/storage";
+import { notifyOrderShipped } from "@/lib/email";
 
 const schema = z.object({
   proofPhotoUrl: z.string().url(),
@@ -16,7 +17,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "You must be logged in." }, { status: 401 });
   }
 
-  const order = await prisma.order.findUnique({ where: { id } });
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: { listing: true, buyer: { select: { email: true, name: true } } },
+  });
   if (!order) return NextResponse.json({ error: "Order not found." }, { status: 404 });
   if (order.sellerId !== session.user.id) {
     return NextResponse.json({ error: "Only the seller can mark this order as shipped." }, { status: 403 });
@@ -46,5 +50,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       shippedAt: new Date(),
     },
   });
+
+  await notifyOrderShipped({
+    buyerEmail: order.buyer.email,
+    buyerName: order.buyer.name,
+    brand: order.listing.brand,
+    fragranceName: order.listing.fragranceName,
+    trackingNumber: parsed.data.trackingNumber,
+    orderId: order.id,
+    origin: new URL(req.url).origin,
+  });
+
   return NextResponse.json({ ok: true });
 }

@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { initializePaystackTransaction, paystackEnabled } from "@/lib/paystack";
+import { notifyNewOrder } from "@/lib/email";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -17,7 +18,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing listing." }, { status: 400 });
   }
 
-  const listing = await prisma.listing.findUnique({ where: { id: listingId } });
+  const listing = await prisma.listing.findUnique({
+    where: { id: listingId },
+    include: { seller: { select: { email: true, name: true } } },
+  });
   if (!listing) {
     return NextResponse.json({ error: "This listing is no longer available." }, { status: 400 });
   }
@@ -66,6 +70,16 @@ export async function POST(req: Request) {
       },
     });
     await prisma.listing.update({ where: { id: listing.id }, data: { status: "SOLD" } });
+    await notifyNewOrder({
+      sellerEmail: listing.seller.email,
+      sellerName: listing.seller.name,
+      buyerName: session.user.name ?? "A buyer",
+      brand: listing.brand,
+      fragranceName: listing.fragranceName,
+      pricePaid: price,
+      orderId: order.id,
+      origin,
+    });
     return NextResponse.json({ mock: true, orderId: order.id });
   }
 

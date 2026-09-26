@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notifyNewOffer } from "@/lib/email";
 
 const schema = z.object({
   listingId: z.string().min(1),
@@ -21,7 +22,10 @@ export async function POST(req: Request) {
   }
   const { listingId, offerPrice } = parsed.data;
 
-  const listing = await prisma.listing.findUnique({ where: { id: listingId } });
+  const listing = await prisma.listing.findUnique({
+    where: { id: listingId },
+    include: { seller: { select: { email: true, name: true } } },
+  });
   if (!listing || listing.status !== "LIVE" || !listing.negotiable) {
     return NextResponse.json({ error: "This listing isn't open to offers right now." }, { status: 400 });
   }
@@ -36,6 +40,17 @@ export async function POST(req: Request) {
       offerPrice,
       status: "PENDING",
     },
+  });
+
+  await notifyNewOffer({
+    sellerEmail: listing.seller.email,
+    sellerName: listing.seller.name,
+    buyerName: session.user.name ?? "A buyer",
+    brand: listing.brand,
+    fragranceName: listing.fragranceName,
+    offerPrice,
+    offerId: offer.id,
+    origin: new URL(req.url).origin,
   });
 
   return NextResponse.json({ ok: true, id: offer.id });
