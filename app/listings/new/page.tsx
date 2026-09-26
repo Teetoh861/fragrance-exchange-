@@ -104,8 +104,8 @@ export default function NewListingPage() {
     <div className="mx-auto max-w-2xl px-4 py-10">
       <h1 className="mb-1 text-2xl font-bold text-stone-900">List your perfume</h1>
       <p className="mb-6 text-sm text-muted">
-        Your listing goes to <strong>Pending Review</strong> and won&apos;t be visible publicly
-        until our team approves the photos.
+        Your listing goes <strong>live immediately</strong> after you submit it. Our team may still
+        flag a listing for a closer look if something looks off.
       </p>
 
       <form onSubmit={onSubmit} className="space-y-6">
@@ -350,7 +350,7 @@ export default function NewListingPage() {
         {error && <p className="text-sm text-red-700">{error}</p>}
 
         <Button type="submit" size="lg" className="w-full" disabled={loading}>
-          {loading ? uploadStatus ?? "Submitting…" : "Submit for review"}
+          {loading ? uploadStatus ?? "Submitting…" : "Publish listing"}
         </Button>
       </form>
     </div>

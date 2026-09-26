@@ -20,6 +20,7 @@ enum Role {
 enum ListingStatus {
   PENDING_REVIEW
   LIVE
+  FLAGGED
   RESERVED
   SOLD
   REJECTED
@@ -161,7 +162,7 @@ model Listing {
   city              String         @default("")
   logisticsNote     String?
 
-  status            ListingStatus  @default(PENDING_REVIEW)
+  status            ListingStatus  @default(LIVE)
   reviewNote        String?
 
   photos            ListingPhoto[]

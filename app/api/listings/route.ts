@@ -87,7 +87,7 @@ export async function POST(req: Request) {
         state: parsed.data.state,
         city: parsed.data.city,
         logisticsNote: parsed.data.logisticsNote || null,
-        status: "PENDING_REVIEW",
+        status: "LIVE",
         photos: { create: parsed.data.photos },
       },
     });

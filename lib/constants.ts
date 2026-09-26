@@ -115,9 +115,10 @@ export const REQUIRED_PHOTO_TYPES = ["FRONT", "BACK", "BASE", "CAP"] as const;
 export const LISTING_STATUS_LABELS: Record<string, string> = {
   PENDING_REVIEW: "Pending Review",
   LIVE: "Live",
+  FLAGGED: "Flagged for Review",
   RESERVED: "Reserved",
   SOLD: "Sold",
-  REJECTED: "Rejected",
+  REJECTED: "Removed",
 };
 
 export const ORDER_STATUS_LABELS: Record<string, string> = {

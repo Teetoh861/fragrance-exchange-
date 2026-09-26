@@ -11,15 +11,16 @@ type Props = {
   fragranceName: string;
   sellerName: string;
   photoUrl?: string;
+  reviewNote?: string | null;
 };
 
-export function ListingReviewRow({ id, brand, fragranceName, sellerName, photoUrl }: Props) {
+export function FlaggedListingRow({ id, brand, fragranceName, sellerName, photoUrl, reviewNote }: Props) {
   const router = useRouter();
   const [note, setNote] = useState("");
-  const [loading, setLoading] = useState<"approve" | "reject" | null>(null);
+  const [loading, setLoading] = useState<"restore" | "reject" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function act(action: "approve" | "reject") {
+  async function act(action: "restore" | "reject") {
     setLoading(action);
     setError(null);
     const res = await fetch(`/api/admin/listings/${id}`, {
@@ -46,6 +47,7 @@ export function ListingReviewRow({ id, brand, fragranceName, sellerName, photoUr
           {brand} — {fragranceName}
         </a>
         <p className="text-xs text-muted">Seller: {sellerName}</p>
+        {reviewNote && <p className="text-xs text-amber-700">Flag reason: {reviewNote}</p>}
       </div>
       <input
         value={note}
@@ -54,11 +56,11 @@ export function ListingReviewRow({ id, brand, fragranceName, sellerName, photoUr
         className="h-9 w-48 rounded-lg border border-border bg-background px-2 text-xs"
       />
       <div className="flex gap-2">
-        <Button size="sm" onClick={() => act("approve")} disabled={loading !== null}>
-          {loading === "approve" ? "…" : "Approve"}
+        <Button size="sm" onClick={() => act("restore")} disabled={loading !== null}>
+          {loading === "restore" ? "…" : "Restore to Live"}
         </Button>
         <Button size="sm" variant="danger" onClick={() => act("reject")} disabled={loading !== null}>
-          {loading === "reject" ? "…" : "Reject"}
+          {loading === "reject" ? "…" : "Remove Listing"}
         </Button>
       </div>
       {error && <p className="text-xs text-red-700">{error}</p>}

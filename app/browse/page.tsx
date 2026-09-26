@@ -79,6 +79,7 @@ export default async function BrowsePage({
     RESERVED: 1,
     SOLD: 2,
     PENDING_REVIEW: 3,
+    FLAGGED: 3,
     REJECTED: 3,
   };
   const listings = [...rawListings].sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);

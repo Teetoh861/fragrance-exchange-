@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { Badge, statusTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BuyNowButton } from "@/components/BuyNowButton";
+import { FlagListingButton } from "@/components/admin/FlagListingButton";
 import {
   CATEGORY_LABELS,
   CONCENTRATION_LABELS,
@@ -58,9 +59,9 @@ export default async function ListingDetailPage({
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
       {submitted && (
-        <p className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Listing submitted! It&apos;s now <strong>Pending Review</strong> — our team will approve
-          or reject the photos before it goes live.
+        <p className="mb-6 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          Listing submitted and <strong>live</strong> right away! Our team may still flag it for a
+          closer look if anything looks off.
         </p>
       )}
       {!isPubliclyVisible && (isOwner || session?.user.role === "ADMIN") && (
@@ -182,9 +183,15 @@ export default async function ListingDetailPage({
           )}
 
           <p className="mt-6 text-xs text-muted">
-            Listings are photo-reviewed by our team, not physically authenticated. See the trust
-            &amp; safety notes in the site footer for more.
+            Listings go live immediately and aren&apos;t physically authenticated by our team. See
+            the trust &amp; safety notes in the site footer for more.
           </p>
+
+          {session?.user.role === "ADMIN" && ["LIVE", "RESERVED", "SOLD"].includes(listing.status) && (
+            <div className="mt-4">
+              <FlagListingButton listingId={listing.id} />
+            </div>
+          )}
         </div>
       </div>
     </div>
